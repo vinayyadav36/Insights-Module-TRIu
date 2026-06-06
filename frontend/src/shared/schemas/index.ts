@@ -6,3 +6,7 @@ export const isEmailValid = (email: string) => {
 export const isValidSlug = (slug: string) => {
   return /^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(slug);
 };
+
+export const isValidRole = (role: string) => {
+  return role === 'admin' || role === 'user';
+};

@@ -32,6 +32,7 @@ import { useRouter } from 'vue-router';
 import { useAuthStore } from './stores/authStore';
 import InstallPrompt from './components/pwa/InstallPrompt.vue';
 import { onMounted } from 'vue';
+import { registerServiceWorker } from './pwa/register';
 
 const router = useRouter();
 const authStore = useAuthStore();
@@ -42,16 +43,7 @@ const handleLogout = () => {
 };
 
 onMounted(() => {
-  if ('serviceWorker' in navigator) {
-    navigator.serviceWorker.register('/sw.js').then(
-      () => {
-        // SW registered
-      },
-      () => {
-        // SW failed
-      }
-    );
-  }
+  registerServiceWorker();
 });
 </script>
 
