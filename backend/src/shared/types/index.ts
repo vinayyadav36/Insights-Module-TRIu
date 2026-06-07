@@ -3,8 +3,18 @@ export interface User {
   email: string;
   passwordHash: string; // Salted hash
   role: 'admin' | 'user';
+  profileVisibility?: 'public' | 'private';
   createdAt: string;
   updatedAt: string;
+}
+
+export interface PublicProfile {
+  id: string;
+  email: string;
+  displayName: string;
+  role: string;
+  title?: string;
+  publicPages: Partial<PageConfig>[];
 }
 
 export interface BlockTemplate {
