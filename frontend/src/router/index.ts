@@ -7,6 +7,7 @@ import Preview from '../pages/Preview.vue';
 import LoginCallback from '../pages/auth/LoginCallback.vue';
 import PublicProfile from '../pages/PublicProfile.vue';
 import SuperAdminDashboard from '../pages/admin/SuperAdminDashboard.vue';
+import Insights from '../pages/Insights.vue';
 import { useAuthStore } from '../stores/authStore';
 
 const routes = [
@@ -17,7 +18,8 @@ const routes = [
   { path: '/editor/:id?', component: Editor, meta: { requiresAuth: true } },
   { path: '/p/:slug', component: Preview },
   { path: '/u/:id', component: PublicProfile },
-  { path: '/admin', component: SuperAdminDashboard, meta: { requiresAuth: true, requiresAdmin: true } }
+  { path: '/admin', component: SuperAdminDashboard, meta: { requiresAuth: true, requiresAdmin: true } },
+  { path: '/insights', component: Insights }
 ];
 
 const router = createRouter({
