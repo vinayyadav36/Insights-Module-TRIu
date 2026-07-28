@@ -1,99 +1,63 @@
-import { IInsightsService } from '../api/contracts';
-import {
-  InsightRange,
-  InsightsOverviewResponse,
-  InsightsKPIResponse,
-  InsightsTrendResponse,
-  TopItemsResponse,
-  TopPartiesResponse,
-  TopCategoriesResponse,
-  CashflowSummaryResponse,
-  CreditSummaryResponse
-} from '../api/dto';
-import { insightsRepository } from './insightsRepository';
-import { InsightsDomain } from './insightsDomain';
-import { seedMockData } from './mockAdapters';
+import { IInsightsService, InsightsFilterDTO, InsightsOverviewDTO, CategoryBreakdownItemDTO, PaymentModeMixDTO, TrendPointDTO, PartySpendItemDTO, AnomalyItemDTO } from '../api/dto';
+import { IExpenseService, expenseService } from '../../expenses/services/expenseService';
+import { IPartyService, partyService } from '../../parties/services/partyService';
+import { InsightsSelectors } from './insightsSelectors';
 
-export class InsightsService implements IInsightsService {
-  constructor() {
-    // Ensure mock data is seeded on init if no backend exists
-    seedMockData();
+export class LocalInsightsService implements IInsightsService {
+  constructor(private readonly expenses: IExpenseService, private readonly parties: IPartyService) {}
+
+  async getOverview(filter: InsightsFilterDTO): Promise<InsightsOverviewDTO> {
+    const expenses = await this.expenses.getExpenses({ status: 'active' });
+    return InsightsSelectors.getOverview(expenses, filter);
   }
 
-  private getDateRange(range?: InsightRange) {
-    // Basic implementation - in a real scenario we'd use date-fns to parse the preset
-    return { startDate: range?.startDate, endDate: range?.endDate };
+  async getCategoryBreakdown(filter: InsightsFilterDTO): Promise<CategoryBreakdownItemDTO[]> {
+    const expenses = await this.expenses.getExpenses({ status: 'active' });
+    return InsightsSelectors.getCategoryBreakdown(expenses, filter);
   }
 
-  async getInsightsOverview(range?: InsightRange): Promise<InsightsOverviewResponse> {
-    const { startDate, endDate } = this.getDateRange(range);
+  async getPaymentModeMix(filter: InsightsFilterDTO): Promise<PaymentModeMixDTO[]> {
+    const expenses = await this.expenses.getExpenses({ status: 'active' });
+    return InsightsSelectors.getPaymentModeMix(expenses, filter);
+  }
 
-    const [sales, expenses, parties, catalog] = await Promise.all([
-      insightsRepository.getSales(startDate, endDate),
-      insightsRepository.getExpenses(startDate, endDate),
-      insightsRepository.getParties(),
-      insightsRepository.getCatalogItems()
+  async getTrend(filter: InsightsFilterDTO, bucket: 'day' | 'week' | 'month'): Promise<TrendPointDTO[]> {
+    const expenses = await this.expenses.getExpenses({ status: 'active' });
+    return InsightsSelectors.getTrend(expenses, filter, bucket);
+  }
+
+  async getPartySpend(filter: InsightsFilterDTO): Promise<PartySpendItemDTO[]> {
+    const [expenses, parties] = await Promise.all([
+      this.expenses.getExpenses({ status: 'active' }),
+      this.parties.getParties()
+    ]);
+    return InsightsSelectors.getPartySpend(expenses, parties, filter);
+  }
+
+  async getAnomalies(filter: InsightsFilterDTO): Promise<AnomalyItemDTO[]> {
+    const expenses = await this.expenses.getExpenses({ status: 'active' });
+    return InsightsSelectors.getAnomalies(expenses, filter);
+  }
+
+  async exportInsightsSummary(filter: InsightsFilterDTO): Promise<object> {
+    const [overview, categoryBreakdown, paymentModeMix, trend, partySpend, anomalies] = await Promise.all([
+      this.getOverview(filter),
+      this.getCategoryBreakdown(filter),
+      this.getPaymentModeMix(filter),
+      this.getTrend(filter, 'month'),
+      this.getPartySpend(filter),
+      this.getAnomalies(filter)
     ]);
 
     return {
-      kpis: InsightsDomain.calculateKPIs(sales, expenses),
-      trends: InsightsDomain.buildTrendSeries(sales, expenses),
-      topItems: InsightsDomain.getTopItems(sales, catalog),
-      topParties: InsightsDomain.getTopParties(sales, parties),
-      topCategories: InsightsDomain.getTopCategories(expenses),
-      cashflow: InsightsDomain.calculateCashflow(sales, expenses),
-      credit: InsightsDomain.calculateCreditSummary(parties, expenses)
+      overview,
+      categoryBreakdown,
+      paymentModeMix,
+      trend,
+      partySpend,
+      anomalies
     };
-  }
-
-  async getInsightsKPIs(range?: InsightRange): Promise<InsightsKPIResponse> {
-    const { startDate, endDate } = this.getDateRange(range);
-    const sales = await insightsRepository.getSales(startDate, endDate);
-    const expenses = await insightsRepository.getExpenses(startDate, endDate);
-    return { kpis: InsightsDomain.calculateKPIs(sales, expenses) };
-  }
-
-  async getInsightsTrends(range?: InsightRange): Promise<InsightsTrendResponse> {
-    const { startDate, endDate } = this.getDateRange(range);
-    const sales = await insightsRepository.getSales(startDate, endDate);
-    const expenses = await insightsRepository.getExpenses(startDate, endDate);
-    return { trends: InsightsDomain.buildTrendSeries(sales, expenses) };
-  }
-
-  async getTopItems(range?: InsightRange): Promise<TopItemsResponse> {
-    const { startDate, endDate } = this.getDateRange(range);
-    const sales = await insightsRepository.getSales(startDate, endDate);
-    const catalog = await insightsRepository.getCatalogItems();
-    return { items: InsightsDomain.getTopItems(sales, catalog) };
-  }
-
-  async getTopParties(range?: InsightRange): Promise<TopPartiesResponse> {
-    const { startDate, endDate } = this.getDateRange(range);
-    const sales = await insightsRepository.getSales(startDate, endDate);
-    const parties = await insightsRepository.getParties();
-    return { parties: InsightsDomain.getTopParties(sales, parties) };
-  }
-
-  async getTopCategories(range?: InsightRange): Promise<TopCategoriesResponse> {
-    const { startDate, endDate } = this.getDateRange(range);
-    const expenses = await insightsRepository.getExpenses(startDate, endDate);
-    return { categories: InsightsDomain.getTopCategories(expenses) };
-  }
-
-  async getCashflowSummary(range?: InsightRange): Promise<CashflowSummaryResponse> {
-    const { startDate, endDate } = this.getDateRange(range);
-    const sales = await insightsRepository.getSales(startDate, endDate);
-    const expenses = await insightsRepository.getExpenses(startDate, endDate);
-    return InsightsDomain.calculateCashflow(sales, expenses);
-  }
-
-  async getCreditSummary(_range?: InsightRange): Promise<CreditSummaryResponse> {
-    const parties = await insightsRepository.getParties();
-    // Assuming credit summary might look at expenses across all time or specifically within range,
-    // usually outstanding is all time up to endDate
-    const expenses = await insightsRepository.getExpenses();
-    return InsightsDomain.calculateCreditSummary(parties, expenses);
   }
 }
 
-export const insightsService = new InsightsService();
+export const insightsService = new LocalInsightsService(expenseService, partyService);
