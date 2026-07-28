@@ -7,8 +7,9 @@ import Preview from '../pages/Preview.vue';
 import LoginCallback from '../pages/auth/LoginCallback.vue';
 import PublicProfile from '../pages/PublicProfile.vue';
 import SuperAdminDashboard from '../pages/admin/SuperAdminDashboard.vue';
-import Insights from '../pages/Insights.vue';
 import { useAuthStore } from '../stores/authStore';
+import ReactWrapper from '../shared/components/ReactWrapper.vue';
+import { InsightsPage } from '../modules/insights/InsightsPage';
 
 const routes = [
   { path: '/', component: Home },
@@ -19,7 +20,7 @@ const routes = [
   { path: '/p/:slug', component: Preview },
   { path: '/u/:id', component: PublicProfile },
   { path: '/admin', component: SuperAdminDashboard, meta: { requiresAuth: true, requiresAdmin: true } },
-  { path: '/insights', component: Insights }
+  { path: '/insights', component: ReactWrapper, props: { component: InsightsPage } }
 ];
 
 const router = createRouter({

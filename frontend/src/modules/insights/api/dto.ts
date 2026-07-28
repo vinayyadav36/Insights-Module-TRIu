@@ -1,78 +1,67 @@
-export interface InsightKPI {
-  key: string;
-  label: string;
-  value: number;
-  formattedValue: string;
-  delta?: number;
-  deltaLabel?: string;
-  trendDirection?: 'up' | 'down' | 'flat';
+export interface InsightsOverviewDTO {
+  rangeStart: string; // ISO
+  rangeEnd: string; // ISO
+  totalSpend: number;
+  transactionCount: number;
+  avgDailySpend: number;
+  topCategory: { id: string; name: string; total: number } | null;
+  cashVsDigital: { cash: number; digital: number };
+  deltaVsPreviousPeriod: number; // percentage
 }
 
-export interface InsightTrendPoint {
-  date: string; // YYYY-MM-DD
-  salesTotal: number;
-  expenseTotal: number;
-  netTotal: number;
-  collectionTotal?: number;
-  creditIssued?: number;
-}
-
-export interface TopEntitySummary {
-  id: string;
-  label: string;
-  amount: number;
+export interface CategoryBreakdownItemDTO {
+  categoryId: string;
+  categoryName: string;
+  total: number;
   count: number;
-  type?: string;
+  percentOfTotal: number;
 }
 
-export interface InsightRange {
-  startDate: string; // ISO string
-  endDate: string; // ISO string
-  preset: 'today' | '7d' | '30d' | '90d' | 'custom';
+export interface PaymentModeMixDTO {
+  mode: 'cash' | 'upi' | 'bank' | 'card' | 'other';
+  total: number;
+  percentOfTotal: number;
 }
 
-export interface InsightsOverviewResponse {
-  kpis: InsightKPI[];
-  trends: InsightTrendPoint[];
-  topItems: TopEntitySummary[];
-  topParties: TopEntitySummary[];
-  topCategories: TopEntitySummary[];
-  cashflow: CashflowSummaryResponse;
-  credit: CreditSummaryResponse;
+export interface TrendPointDTO {
+  date: string; // ISO day/week/month bucket
+  total: number;
 }
 
-export interface InsightsKPIResponse {
-  kpis: InsightKPI[];
+export interface PartySpendItemDTO {
+  partyId: string;
+  partyName: string;
+  partyType: 'customer' | 'supplier' | 'both';
+  total: number;
+  transactionCount: number;
+  lastTransactionDate: string;
 }
 
-export interface InsightsTrendResponse {
-  trends: InsightTrendPoint[];
+export interface AnomalyItemDTO {
+  expenseId: string;
+  categoryId: string;
+  categoryName: string;
+  amount: number;
+  averageForCategory: number;
+  percentAboveAverage: number;
+  date: string;
 }
 
-export interface TopItemsResponse {
-  items: TopEntitySummary[];
+export interface InsightsFilterDTO {
+  rangeStart?: string;
+  rangeEnd?: string;
+  preset?: 'today' | 'week' | 'month' | 'custom';
+  categoryId?: string;
+  partyId?: string;
+  paymentMode?: 'cash' | 'upi' | 'bank' | 'card' | 'other';
 }
 
-export interface TopPartiesResponse {
-  parties: TopEntitySummary[];
-}
-
-export interface TopCategoriesResponse {
-  categories: TopEntitySummary[];
-}
-
-export interface CashflowSummaryResponse {
-  totalIncoming: number;
-  totalOutgoing: number;
-  net: number;
-  formattedIncoming: string;
-  formattedOutgoing: string;
-  formattedNet: string;
-}
-
-export interface CreditSummaryResponse {
-  outstandingCustomerCredit: number;
-  supplierPayableExposure: number;
-  formattedCustomerCredit: string;
-  formattedSupplierPayable: string;
+export interface IInsightsService {
+  getOverview(filter: InsightsFilterDTO): Promise<InsightsOverviewDTO>;
+  getCategoryBreakdown(filter: InsightsFilterDTO): Promise<CategoryBreakdownItemDTO[]>;
+  getPaymentModeMix(filter: InsightsFilterDTO): Promise<PaymentModeMixDTO[]>;
+  getTrend(filter: InsightsFilterDTO, bucket: 'day' | 'week' | 'month'): Promise<TrendPointDTO[]>;
+  getPartySpend(filter: InsightsFilterDTO): Promise<PartySpendItemDTO[]>;
+  getAnomalies(filter: InsightsFilterDTO): Promise<AnomalyItemDTO[]>;
+  exportInsightsSummary(filter: InsightsFilterDTO): Promise<object>;
 }
